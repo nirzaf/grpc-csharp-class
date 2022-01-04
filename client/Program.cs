@@ -1,20 +1,16 @@
-﻿using Dummy;
+﻿using System;
+using System.Linq;
+using System.Threading.Tasks;
 using Greet;
 using Grpc.Core;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace client
 {
-    class Program
+    internal class Program
     {
-        const string target = "127.0.0.1:50051";
+        private const string target = "127.0.0.1:50051";
 
-        static async Task Main(string[] args)
+        private static async Task Main(string[] args)
         {
             //var clientCert = File.ReadAllText("ssl/client.crt");
             //var clientKey = File.ReadAllText("ssl/client.key");
@@ -22,9 +18,9 @@ namespace client
 
             //var channelCredentials = new SslCredentials(caCrt, new KeyCertificatePair(clientCert, clientKey));
 
-            Channel channel = new Channel("localhost", 50051, ChannelCredentials.Insecure);// channelCredentials);
+            var channel = new Channel("localhost", 50051, ChannelCredentials.Insecure); // channelCredentials);
 
-            await channel.ConnectAsync().ContinueWith((task) =>
+            await channel.ConnectAsync().ContinueWith(task =>
             {
                 if (task.Status == TaskStatus.RanToCompletion)
                     Console.WriteLine("The client connected successfully");
@@ -43,26 +39,27 @@ namespace client
 
         public static void DoSimpleGreet(GreetingService.GreetingServiceClient client)
         {
-            var greeting = new Greeting()
+            var greeting = new Greeting
             {
                 FirstName = "Clement",
                 LastName = "Jean"
             };
 
-            var request = new GreetingRequest() { Greeting = greeting };
+            var request = new GreetingRequest {Greeting = greeting};
             var response = client.Greet(request);
 
             Console.WriteLine(response.Result);
         }
+
         public static async Task DoManyGreetings(GreetingService.GreetingServiceClient client)
         {
-            var greeting = new Greeting()
+            var greeting = new Greeting
             {
                 FirstName = "Clement",
                 LastName = "Jean"
             };
 
-            var request = new GreetManyTimesRequest() { Greeting = greeting };
+            var request = new GreetManyTimesRequest {Greeting = greeting};
             var response = client.GreetManyTimes(request);
 
             while (await response.ResponseStream.MoveNext())
@@ -71,21 +68,19 @@ namespace client
                 await Task.Delay(200);
             }
         }
+
         public static async Task DoLongGreet(GreetingService.GreetingServiceClient client)
         {
-            var greeting = new Greeting()
+            var greeting = new Greeting
             {
                 FirstName = "Clement",
                 LastName = "Jean"
             };
 
-            var request = new LongGreetRequest() { Greeting = greeting };
+            var request = new LongGreetRequest {Greeting = greeting};
             var stream = client.LongGreet();
 
-            foreach (int i in Enumerable.Range(1, 10))
-            {
-                await stream.RequestStream.WriteAsync(request);
-            }
+            foreach (int i in Enumerable.Range(1, 10)) await stream.RequestStream.WriteAsync(request);
 
             await stream.RequestStream.CompleteAsync();
 
@@ -93,6 +88,7 @@ namespace client
 
             Console.WriteLine(response.Result);
         }
+
         public static async Task DoGreetEveryone(GreetingService.GreetingServiceClient client)
         {
             var stream = client.GreetEveryone();
@@ -100,22 +96,20 @@ namespace client
             var responseReaderTask = Task.Run(async () =>
             {
                 while (await stream.ResponseStream.MoveNext())
-                {
                     Console.WriteLine("Received : " + stream.ResponseStream.Current.Result);
-                }
             });
 
             Greeting[] greetings =
             {
-                new Greeting() { FirstName = "John", LastName = "Doe" },
-                new Greeting() { FirstName = "Clement", LastName = "Jean" },
-                new Greeting() { FirstName = "Patricia", LastName = "Hertz" }
+                new Greeting {FirstName = "John", LastName = "Doe"},
+                new Greeting {FirstName = "Clement", LastName = "Jean"},
+                new Greeting {FirstName = "Patricia", LastName = "Hertz"}
             };
 
             foreach (var greeting in greetings)
             {
-                Console.WriteLine("Sending : " + greeting.ToString());
-                await stream.RequestStream.WriteAsync(new GreetEveryoneRequest()
+                Console.WriteLine("Sending : " + greeting);
+                await stream.RequestStream.WriteAsync(new GreetEveryoneRequest
                 {
                     Greeting = greeting
                 });

@@ -1,21 +1,17 @@
-﻿using Greet;
+﻿using System;
+using System.IO;
+using Greet;
 using Grpc.Core;
 using Grpc.Reflection;
 using Grpc.Reflection.V1Alpha;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace server
 {
-    class Program
+    internal class Program
     {
-        const int Port = 50051;
+        private const int Port = 50051;
 
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
             Server server = null;
 
@@ -28,15 +24,17 @@ namespace server
 
                 //var credentials = new SslServerCredentials(new List<KeyCertificatePair>() { keypair }, cacert, true);
 
-                var reflectionServiceImpl = new ReflectionServiceImpl(GreetingService.Descriptor, ServerReflection.Descriptor);
+                var reflectionServiceImpl =
+                    new ReflectionServiceImpl(GreetingService.Descriptor, ServerReflection.Descriptor);
 
-                server = new Server()
+                server = new Server
                 {
-                    Services = {
+                    Services =
+                    {
                         GreetingService.BindService(new GreetingServiceImpl()),
                         ServerReflection.BindService(reflectionServiceImpl)
                     },
-                    Ports = { new ServerPort("localhost", Port, ServerCredentials.Insecure) }// credentials) }
+                    Ports = {new ServerPort("localhost", Port, ServerCredentials.Insecure)} // credentials) }
                 };
 
                 server.Start();
